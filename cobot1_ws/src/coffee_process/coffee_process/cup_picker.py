@@ -19,7 +19,7 @@ def plan_pick(detection, cfg):
     approach = list(state_cfg["approach_orientation"])
 
     if detection["state"] == "lying":
-        approach[2] += detection["yaw"]
+        approach[0] += detection["yaw"]
         rim_forward = math.cos(math.radians(detection["rim_direction"] - detection["yaw"])) > 0
         carry = state_cfg["carry_orientation_rim_forward" if rim_forward else "carry_orientation_rim_backward"]
     else:

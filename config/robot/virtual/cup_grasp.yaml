@@ -16,6 +16,6 @@ states:
     carry_orientation: [0.0, 90.0, 180.0]
   lying:                         # 누운 컵: 컵 축(yaw)에 맞춰 위에서 집고, 입구 쪽에 따라 손목을 세움
     grasp_offset: [0.0, 0.0, -10.0]
-    approach_orientation: [0.0, 180.0, 0.0]   # 마지막 값에 탐지 yaw 를 더함
+    approach_orientation: [0.0, 180.0, 0.0]   # 첫 값(A, base z축 회전)에 탐지 yaw 를 더함
     carry_orientation_rim_forward: [0.0, 90.0, 0.0]
     carry_orientation_rim_backward: [180.0, 90.0, 0.0]

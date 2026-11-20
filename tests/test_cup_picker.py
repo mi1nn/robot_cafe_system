@@ -1,4 +1,7 @@
+import math
+
 import pytest
+from scipy.spatial.transform import Rotation
 
 from coffee_process.cup_picker import CupPicker, plan_pick
 
@@ -71,10 +74,17 @@ def test_plan_pick_upright_sequence():
     assert plan[1] == ("move", [400, 0, 170, 0, 180, 0])
 
 
+def heading(posx):
+    """Doosan posx(ZYZ) 툴 x축이 base 에서 가리키는 방향(deg). 3개면 자세만, 6개면 뒤 3개."""
+    angles = list(posx)[-3:]
+    x_axis = Rotation.from_euler("ZYZ", angles, degrees=True).as_matrix()[:, 0]
+    return math.degrees(math.atan2(x_axis[1], x_axis[0])) % 360
+
+
 def test_plan_pick_lying_applies_yaw_and_rim_side():
     fwd = plan_pick({"state": "lying", "position": [400, 0, 40], "yaw": 30, "rim_direction": 30}, CFG)
     back = plan_pick({"state": "lying", "position": [400, 0, 40], "yaw": 30, "rim_direction": -150}, CFG)
-    assert fwd[1][1][5] == CFG["states"]["lying"]["approach_orientation"][2] + 30
+    assert heading(fwd[1][1]) - heading(CFG["states"]["lying"]["approach_orientation"]) == pytest.approx(30)
     assert fwd[5][1][3:] == CFG["states"]["lying"]["carry_orientation_rim_forward"]
     assert back[5][1][3:] == CFG["states"]["lying"]["carry_orientation_rim_backward"]
 
