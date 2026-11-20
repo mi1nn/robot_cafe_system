@@ -1,0 +1,16 @@
+# 가상 모드 예시 값 (mock 비전이라 실제로 쓰이지 않음). 실제 값은 calibrate_node가 real/ 에 저장.
+parent: link_6
+child: camera_color_optical_frame
+translation_mm:
+- 0.0
+- 60.0
+- 40.0
+quaternion_xyzw:
+- 0.0
+- 0.0
+- 0.0
+- 1.0
+samples: 0
+spread_mm: 0.0
+spread_deg: 0.0
+date: '2026-11-20'
