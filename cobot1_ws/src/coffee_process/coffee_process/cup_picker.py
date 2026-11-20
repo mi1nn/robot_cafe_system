@@ -14,7 +14,7 @@ def plan_pick(detection, cfg):
     lift = [0.0, 0.0, cfg["approach_height"]]
 
     grasp = _add(detection["position"], state_cfg["grasp_offset"])
-    station = list(cfg["station_position"])
+    station = _add(cfg["station_position"], state_cfg.get("place_offset", [0.0, 0.0, 0.0]))
 
     approach = list(state_cfg["approach_orientation"])
 

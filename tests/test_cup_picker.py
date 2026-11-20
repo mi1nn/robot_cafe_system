@@ -12,7 +12,7 @@ CFG = {
     "acceleration": 30.0,
     "states": {
         "upright": {"grasp_offset": [0, 0, -30], "approach_orientation": [0, 180, 0], "carry_orientation": [0, 180, 0]},
-        "inverted": {"grasp_offset": [0, 0, -20], "approach_orientation": [0, 90, 0], "carry_orientation": [0, 90, 180]},
+        "inverted": {"grasp_offset": [0, 0, -20], "place_offset": [0, 0, 40], "approach_orientation": [0, 90, 0], "carry_orientation": [0, 90, 180]},
         "lying": {
             "grasp_offset": [0, 0, -10],
             "approach_orientation": [0, 180, 0],
@@ -91,8 +91,8 @@ def test_plan_pick_lying_applies_yaw_and_rim_side():
 
 def test_plan_pick_places_at_station():
     plan = plan_pick({"state": "inverted", "position": [400, 0, 120], "yaw": 0, "rim_direction": 0}, CFG)
-    assert plan[7][1][:3] == CFG["station_position"]
-    assert plan[6][1][:3] == [450.0, 200.0, 200.0]
+    assert plan[7][1][:3] == [450.0, 200.0, 140.0]  # station + inverted place_offset
+    assert plan[6][1][:3] == [450.0, 200.0, 240.0]
     assert plan[7][1][3:] == CFG["states"]["inverted"]["carry_orientation"]
 
 
@@ -138,3 +138,8 @@ def test_picker_calls_checkpoint_before_each_motion():
     ticks = []
     CupPicker(FakeRobot(), FakeIO(), FakeVision([FOUND_INVERTED]), CFG).run(lambda: ticks.append(1), print)
     assert len(ticks) >= 10
+
+
+def test_plan_pick_place_offset_defaults_to_zero():
+    plan = plan_pick({"state": "upright", "position": [400, 0, 100], "yaw": 0, "rim_direction": 0}, CFG)
+    assert plan[7][1][:3] == CFG["station_position"]
