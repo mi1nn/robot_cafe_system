@@ -1,6 +1,6 @@
 import threading
 
-from cafe_interfaces.srv import MoveNamedPose, SetDigitalOutput, StopProcess
+from cafe_interfaces.srv import DetectCup, MoveCartesian, MoveNamedPose, SetDigitalOutput, StopProcess
 from onrobot_rg_msgs.srv import SetCommand
 from std_srvs.srv import Trigger
 
@@ -28,6 +28,8 @@ class RobotClient:
 
         self._move = node.create_client(
             MoveNamedPose, "/robot_control/move_named_pose", callback_group=cb_group)
+        self._move_cartesian = node.create_client(
+            MoveCartesian, "/robot_control/move_cartesian", callback_group=cb_group)
         self._pause = node.create_client(
             Trigger, "/robot_control/pause", callback_group=cb_group)
         self._resume = node.create_client(
@@ -50,6 +52,16 @@ class RobotClient:
 
         if not result.success:
             raise RuntimeError(result.message)
+
+    def move_cartesian(self, pose, velocity, acceleration):
+
+        request = MoveCartesian.Request(
+            pose=[float(v) for v in pose],
+            velocity=float(velocity),
+            acceleration=float(acceleration),
+        )
+
+        self._check(call_service(self._move_cartesian, request, None))
 
     def pause(self):
         self._check(call_service(self._pause, Trigger.Request(), 5.0))
@@ -100,3 +112,21 @@ class IOClient:
 
         if not result.success:
             raise RuntimeError(f"gripper {command} failed: {result.message}")
+
+
+class VisionClient:
+    """CupPicker의 vision: cafe_vision 노드의 /vision/detect_cup 서비스를 부른다."""
+
+    FIELDS = ("found", "state", "position", "yaw", "rim_direction", "confidence", "message")
+
+    def __init__(self, node, cb_group):
+
+        self._detect = node.create_client(
+            DetectCup, "/vision/detect_cup", callback_group=cb_group)
+
+    def detect_cup(self):
+
+        result = call_service(self._detect, DetectCup.Request(), 10.0)
+        response = {name: getattr(result, name) for name in self.FIELDS}
+        response["position"] = [float(v) for v in response["position"]]
+        return response

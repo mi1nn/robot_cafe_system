@@ -1,0 +1,21 @@
+# 컵 비전 집기 설정 (REAL M0609). 티칭 후 모든 값을 채우세요. 0 이면 start_real.sh 가 실행을 거부합니다.
+# 위치 mm, 자세 posx [rx, ry, rz] (Doosan ZYZ, deg). 순서: coffee_process/cup_picker.py plan_pick
+station_position: [0.0, 0.0, 0.0]   # 바로 세워 내려놓는 자리. poses.yaml 의 cup_pick 과 같은 자리로 티칭
+approach_height: 100.0                    # 집기/놓기 전에 위에서 대기하는 높이
+velocity: 30.0
+acceleration: 30.0
+
+states:
+  upright:                       # 바로 선 컵: 위에서 수직으로 집고 그대로 운반
+    grasp_offset: [0.0, 0.0, 0.0]
+    approach_orientation: [0.0, 0.0, 0.0]
+    carry_orientation: [0.0, 0.0, 0.0]
+  inverted:                      # 뒤집힌 컵: 툴을 수평으로 집고 J6를 180도 돌려 세움
+    grasp_offset: [0.0, 0.0, 0.0]
+    approach_orientation: [0.0, 0.0, 0.0]
+    carry_orientation: [0.0, 0.0, 0.0]
+  lying:                         # 누운 컵: 컵 축(yaw)에 맞춰 위에서 집고, 입구 쪽에 따라 손목을 세움
+    grasp_offset: [0.0, 0.0, 0.0]
+    approach_orientation: [0.0, 0.0, 0.0]   # 마지막 값에 탐지 yaw 를 더함
+    carry_orientation_rim_forward: [0.0, 0.0, 0.0]
+    carry_orientation_rim_backward: [0.0, 0.0, 0.0]
