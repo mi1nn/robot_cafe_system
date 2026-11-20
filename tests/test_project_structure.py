@@ -15,6 +15,7 @@ def test_required_packages():
         "coffee_process",
         "io_controller",
         "robot_control_panel",
+        "cafe_vision",
     ]
 
     for package in packages:

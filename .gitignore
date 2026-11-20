@@ -25,3 +25,6 @@ log/
 *.sqlite3
 .pytest_cache/
 .superpowers/
+
+# Vision model weights (README: cobot1_ws/src/cafe_vision/README.md)
+cobot1_ws/src/cafe_vision/models/*.pt

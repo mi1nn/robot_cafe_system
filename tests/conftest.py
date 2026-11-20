@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-for package in ("robot_driver", "robot_control", "coffee_process"):
+for package in ("robot_driver", "robot_control", "coffee_process", "cafe_vision"):
     sys.path.insert(0, str(ROOT / "cobot1_ws" / "src" / package))
 
 try:

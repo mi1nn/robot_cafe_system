@@ -10,6 +10,7 @@ required = [
     "cobot1_ws/src/coffee_process",
     "cobot1_ws/src/io_controller",
     "cobot1_ws/src/robot_control_panel",
+    "cobot1_ws/src/cafe_vision",
     "config/robot/virtual",
     "config/robot/real",
 ]
