@@ -12,7 +12,8 @@ from cafe_interfaces.srv import ExecuteRecipe
 
 from .process_runner import ProcessRunner
 from .recipe_manager import RecipeManager
-from .ros_clients import IOClient, RobotClient
+from .cup_picker import CupPicker
+from .ros_clients import IOClient, RobotClient, VisionClient
 
 
 class CoffeeProcessNode(Node):
@@ -34,11 +35,15 @@ class CoffeeProcessNode(Node):
         group = ReentrantCallbackGroup()
         client_group = MutuallyExclusiveCallbackGroup()
 
+        robot = RobotClient(self, client_group)
+        io = IOClient(self, client_group, channels)
+
         self.runner = ProcessRunner(
             RecipeManager(recipe_dir),
-            RobotClient(self, client_group),
-            IOClient(self, client_group, channels),
+            robot,
+            io,
             on_status=self.publish_status,
+            picker=self._make_picker(robot, io, client_group),
         )
 
         self.create_service(
@@ -62,6 +67,22 @@ class CoffeeProcessNode(Node):
             "  /coffee_process/execute_recipe, pause, resume, force_stop, start"
         )
         self.publish_status(self.runner.snapshot())
+
+    def _make_picker(self, robot, io, client_group):
+        """grasp_file 이 있으면 vision_pick 단계용 CupPicker 를 만든다 (없으면 vision_pick 단계가 실패)."""
+
+        self.declare_parameter("grasp_file", "")
+        grasp_file = self.get_parameter("grasp_file").get_parameter_value().string_value
+
+        if not grasp_file:
+            self.get_logger().warn("grasp_file 없음: vision_pick 단계를 쓸 수 없습니다")
+            return None
+
+        with open(grasp_file, "r", encoding="utf-8") as file:
+            cfg = yaml.safe_load(file)
+
+        self.get_logger().info(f"Cup grasp config: {grasp_file}")
+        return CupPicker(robot, io, VisionClient(self, client_group), cfg)
 
     def _required_parameter(self, name, example):
 

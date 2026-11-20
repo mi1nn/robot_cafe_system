@@ -383,3 +383,101 @@ def test_double_resume_from_stopped_starts_one_reset(env):
     runner.join(2)
     assert sorted(ok for ok, _ in results) == [False, True]
     assert robot.calls.count(("move", "home")) == 1
+
+
+VISION_PICK = {"name": "Find Cup", "action": "vision_pick"}
+
+
+class FakePicker:
+    """CupPicker 대역: 이동 두 번 사이에 checkpoint를 부르고, report를 보낸다."""
+
+    def __init__(self, robot, message=None):
+        self.robot = robot
+        self.message = message
+        self.runs = 0
+
+    def run(self, checkpoint, report):
+        self.runs += 1
+        checkpoint()
+        self.robot.move_to_pose("cup_look", 30.0, 30.0)
+        if self.message:
+            report(self.message)
+        checkpoint()
+        self.robot.move_to_pose("cup_station", 30.0, 30.0)
+
+
+@pytest.fixture
+def vision_env():
+    robot = FakeRobot()
+    io = FakeIO()
+    picker = FakePicker(robot)
+    statuses = []
+    runner = ProcessRunner(FakeRecipes([VISION_PICK]), robot, io, on_status=statuses.append, picker=picker)
+    yield runner, robot, io, picker, statuses
+    if robot.block is not None:
+        robot.block.set()
+    runner.join(2)
+
+
+def test_vision_pick_step_runs_picker(vision_env):
+    runner, robot, io, picker, _ = vision_env
+    ready(runner)
+    runner.execute("ORD-1", "latte")
+    runner.join(2)
+    assert picker.runs == 1
+    assert runner.snapshot()["order_state"] == "DONE"
+    assert ("move", "cup_station") in robot.calls
+
+
+def test_vision_pick_without_picker_fails_order(env):
+    runner, robot, io, recipes, _ = env
+    recipes.steps = [VISION_PICK]
+    ready(runner)
+    runner.execute("ORD-1", "latte")
+    runner.join(2)
+    s = runner.snapshot()
+    assert s["order_state"] == "FAILED"
+    assert "grasp_file" in s["message"]
+
+
+def test_force_stop_during_vision_pick_discards_cup(vision_env):
+    runner, robot, io, picker, _ = vision_env
+    ready(runner)
+    robot.block = threading.Event()
+    robot.moving.clear()
+    runner.execute("ORD-1", "latte")
+    wait_until(robot.moving.is_set)
+    assert runner.force_stop()[0] is True
+    runner.join(2)
+    robot.block = None
+    assert runner.resume()[0] is True
+    runner.join(2)
+    assert robot.calls[-2:] == [("move", "trash"), ("move", "home")]
+    assert io.calls[-1] == ("gripper", "open")
+
+
+def test_pause_during_vision_pick_blocks_next_motion(vision_env):
+    runner, robot, io, picker, _ = vision_env
+    ready(runner)
+    robot.block = threading.Event()
+    robot.moving.clear()
+    runner.execute("ORD-1", "latte")
+    wait_until(robot.moving.is_set)
+    assert runner.pause()[0] is True
+    assert ("pause",) in robot.calls
+    robot.block.set()
+    time.sleep(0.1)
+    assert ("move", "cup_station") not in robot.calls
+    assert runner.resume()[0] is True
+    runner.join(2)
+    assert ("move", "cup_station") in robot.calls
+    assert runner.snapshot()["order_state"] == "DONE"
+
+
+def test_report_updates_status_message(vision_env):
+    runner, robot, io, picker, statuses = vision_env
+    picker.message = "컵 탐지: lying"
+    ready(runner)
+    runner.execute("ORD-1", "latte")
+    runner.join(2)
+    assert any(s["message"] == "컵 탐지: lying" for s in statuses)

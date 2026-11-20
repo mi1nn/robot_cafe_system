@@ -6,6 +6,9 @@ recipe:
 
   steps:
 
+    - name: Find Cup          # 카메라로 컵을 찾아 집고, 바로 세워 cup_station(= cup_pick 자리)에 놓는다
+      action: vision_pick
+
     - name: Cup Pick
       action: move
       pose: cup_pick

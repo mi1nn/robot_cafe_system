@@ -17,7 +17,7 @@ class ProcessRunner:
     RUNNING/PAUSED/RESETTING -force_stop 또는 실패-> STOPPED
     """
 
-    def __init__(self, recipe_manager, robot, io, on_status):
+    def __init__(self, recipe_manager, robot, io, on_status, picker=None):
 
         self.recipes = recipe_manager
         self.robot = robot
@@ -43,7 +43,10 @@ class ProcessRunner:
             "message": "초기화 필요",
         }
 
-        self._executor = ProcessExecutor(robot, io, wait=self._wait)
+        self._executor = ProcessExecutor(
+            robot, io, wait=self._wait,
+            picker=picker, checkpoint=self._checkpoint, report=self._report,
+        )
 
 
     def execute(self, order_id, recipe_id):
@@ -81,7 +84,7 @@ class ProcessRunner:
                 return self._reject("pause")
 
             self.state = "PAUSED"
-            pause_robot = self._current_action == "move"
+            pause_robot = self._current_action in ("move", "vision_pick")
             self._cond.notify_all()
 
         if pause_robot:
@@ -205,11 +208,14 @@ class ProcessRunner:
                     )
                     if step["action"] == "gripper" and step.get("command") == "close":
                         self._holding_cup = True
+                    if step["action"] == "vision_pick":
+                        self._holding_cup = True
                 self._emit()
 
                 self._executor.execute_step(step)
 
-                if step["action"] == "gripper" and step.get("command") == "open":
+                released = step["action"] == "gripper" and step.get("command") == "open"
+                if released or step["action"] == "vision_pick":
                     self._holding_cup = False
 
                 with self._cond:
@@ -251,6 +257,12 @@ class ProcessRunner:
         with self._cond:
             self.state = "HOMED"
             self._status.update(message="시작 대기")
+        self._emit()
+
+    def _report(self, message):
+
+        with self._cond:
+            self._status.update(message=message)
         self._emit()
 
     def _step(self, call):
