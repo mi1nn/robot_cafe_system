@@ -53,3 +53,35 @@ URDF 의 장착값은 실측값이 아니므로 체커보드로 직접 구합니
 5. **확인**: 실제 로봇 시험 0단계로, 비전으로 계산한 보드 코너 위치 50 mm 위로 로봇을 보내 눈으로 맞는지 확인합니다.
 
 TF 프레임 이름이 다르면 `-p base_frame:=... -p flange_frame:=...` 로 바꿉니다 (`ros2 run tf2_ros tf2_echo base_link link_6` 로 확인).
+
+## 3. 데이터 촬영 · 라벨링 · 학습
+
+모델은 컵 하나마다 **상자 + 상태(3클래스) + 키포인트 2개**(0 = `rim` 입구 중심, 1 = `bottom` 바닥 중심)를 찾습니다.
+두 키포인트를 이으면 누운 컵의 방향과 입구 쪽을 알 수 있습니다. 정의는 `training/cup.yaml` 입니다.
+
+1. **촬영**: 실제 탐지와 같은 `cup_look` 자세로 로봇을 옮긴 뒤
+
+   ```bash
+   ros2 run cafe_vision capture_node      # s: 저장, q: 종료 → ~/cafe_vision_dataset/raw/
+   ```
+   - 상태별로 100장 이상: 뒤집힌 컵 더미(1–10개 높이), 누운 컵(여러 방향, 입구 방향 섞기), 바로 선 컵 1개.
+   - 테이블 위 위치, 조명, 주변 물건을 바꿔 가며 찍습니다. 컵이 여러 개 함께 보이는 사진도 넣습니다.
+2. **라벨링**: [CVAT](https://www.cvat.ai/) 등에서 컵마다 상자, 클래스(`upright`/`inverted`/`lying`), 키포인트 `rim`, `bottom` 을 답니다.
+   - 위에서 봐서 가려지는 키포인트(예: 뒤집힌 컵의 `rim`)는 visibility 0 으로 표시합니다.
+   - "Ultralytics YOLO Pose" 형식으로 내보내 `~/cafe_vision_dataset/images/{train,val}`, `labels/{train,val}` 로 둡니다 (val 은 약 20%).
+3. **학습** (RTX 3060 6GB 기준 yolov8n-pose 권장)
+
+   ```bash
+   yolo pose train data=cobot1_ws/src/cafe_vision/training/cup.yaml model=yolov8n-pose.pt imgsz=640 epochs=100
+   cp runs/pose/train/weights/best.pt cobot1_ws/src/cafe_vision/models/cup_pose.pt
+   ```
+   가중치 파일(`*.pt`)은 git 에 올리지 않습니다.
+4. **탐지 확인** (로봇을 움직이지 않음)
+
+   ```bash
+   ros2 run cafe_vision vision_node --ros-args \
+       -p model_path:=$PWD/cobot1_ws/src/cafe_vision/models/cup_pose.pt \
+       -p extrinsics_file:=$PWD/config/robot/real/camera_extrinsics.yaml
+   ros2 service call /vision/detect_cup cafe_interfaces/srv/DetectCup
+   ```
+   출력된 `position` 을 자로 잰 실제 컵 위치와 비교합니다.

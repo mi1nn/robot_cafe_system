@@ -1,0 +1,11 @@
+path: ~/cafe_vision_dataset
+train: images/train
+val: images/val
+
+kpt_shape: [2, 3]
+flip_idx: [0, 1]
+
+names:
+  0: upright
+  1: inverted
+  2: lying
