@@ -10,7 +10,7 @@ import cv2
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage
 
 
 class CaptureNode(Node):
@@ -19,7 +19,7 @@ class CaptureNode(Node):
 
         super().__init__("cafe_vision_capture")
 
-        self.declare_parameter("color_topic", "/camera/color/image_raw")
+        self.declare_parameter("color_topic", "/camera/color/image_raw/compressed")
         self.declare_parameter("out_dir", os.path.expanduser("~/cafe_vision_dataset/raw"))
 
         self.out_dir = os.path.expanduser(self.get_parameter("out_dir").value)
@@ -29,11 +29,11 @@ class CaptureNode(Node):
         self.color = None
         self.saved = 0
 
-        self.create_subscription(Image, self.get_parameter("color_topic").value, self.cb_color, 10)
+        self.create_subscription(CompressedImage, self.get_parameter("color_topic").value, self.cb_color, 10)
         self.get_logger().info(f"영상 대기 중... (s: 저장, q: 종료, 저장 위치: {self.out_dir})")
 
     def cb_color(self, msg):
-        self.color = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        self.color = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
 
     def save(self):
 

@@ -17,7 +17,7 @@ from cv_bridge import CvBridge
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.time import Time
-from sensor_msgs.msg import CameraInfo, Image
+from sensor_msgs.msg import CameraInfo, CompressedImage
 from tf2_ros import Buffer, TransformListener
 
 from .geometry import tf_to_matrix
@@ -35,7 +35,7 @@ class CalibrateNode(Node):
             "board_file": os.path.join(get_package_share_directory("cafe_vision"), "calibration", "board.yaml"),
             "output_file": "",
             "sample_dir": os.path.join("log", "calibration", stamp),
-            "color_topic": "/camera/color/image_raw",
+            "color_topic": "/camera/color/image_raw/compressed",
             "info_topic": "/camera/color/camera_info",
             "base_frame": "base_link",
             "flange_frame": "link_6",
@@ -62,11 +62,11 @@ class CalibrateNode(Node):
         self.K = self.dist = None
         self.flanges, self.boards = [], []
 
-        self.create_subscription(Image, self.p["color_topic"], self.cb_color, 10)
+        self.create_subscription(CompressedImage, self.p["color_topic"], self.cb_color, 10)
         self.create_subscription(CameraInfo, self.p["info_topic"], self.cb_info, 10)
 
     def cb_color(self, msg):
-        self.color = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        self.color = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
 
     def cb_info(self, msg):
         self.K = np.array(msg.k, dtype=float).reshape(3, 3)

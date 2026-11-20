@@ -28,6 +28,14 @@ pip install --break-system-packages --user ultralytics "numpy<2"
 python3 -c "import cv_bridge, numpy; print('ok', numpy.__version__)"   # 1.x 이어야 함
 ```
 
+카메라 영상은 네트워크 부담을 줄이려고 압축 토픽으로 받습니다 (컬러 `/camera/color/image_raw/compressed`, 깊이 `/camera/aligned_depth_to_color/image_raw/compressedDepth`, png 무손실).
+카메라를 띄우는 PC에 압축 플러그인이 있어야 이 토픽이 생깁니다.
+
+```bash
+sudo apt install ros-jazzy-image-transport-plugins
+ros2 topic list | grep -E "compressed(Depth)?$"   # 두 토픽이 보여야 함
+```
+
 ## 2. 핸드-아이 캘리브레이션
 
 카메라 좌표를 로봇 좌표로 바꾸려면 **카메라가 손목(`link_6`)에 어떤 위치·방향으로 달려 있는지(X)** 를 알아야 합니다.

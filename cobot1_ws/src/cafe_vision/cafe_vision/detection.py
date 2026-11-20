@@ -4,6 +4,7 @@
 응답 dict 키는 DetectCup.srv 응답 필드와 같다.
 """
 
+import cv2
 import numpy as np
 import yaml
 
@@ -60,6 +61,15 @@ def build_response(candidate, depth_mm, K, T_base_cam):
         "confidence": float(candidate["conf"]),
         "message": f"{candidate['state']} ({candidate['conf']:.2f})",
     }
+
+
+def decode_compressed_depth(fmt, data):
+    """compressedDepth 토픽(16UC1, png) → uint16 깊이(mm). 앞 12바이트는 ConfigHeader라 건너뛴다."""
+
+    if not fmt.startswith("16UC1") or "png" not in fmt:
+        raise ValueError(f"지원하지 않는 compressedDepth 형식: '{fmt}' (16UC1 png만 지원)")
+
+    return cv2.imdecode(np.frombuffer(bytes(data)[12:], np.uint8), cv2.IMREAD_UNCHANGED)
 
 
 def load_mock(path):

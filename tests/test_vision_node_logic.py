@@ -56,3 +56,19 @@ def test_build_response_lying_without_keypoint_is_not_found():
     r = build_response(c, d, K, np.eye(4))
     assert r["found"] is False
     assert "키포인트" in r["message"]
+
+
+def test_decode_compressed_depth_png_roundtrip():
+    import cv2
+    import pytest
+
+    from cafe_vision.detection import decode_compressed_depth
+
+    depth = np.zeros((480, 640), np.uint16)
+    depth[100:200, 100:200] = 1234
+    png = cv2.imencode(".png", depth)[1].tobytes()
+    data = np.zeros(3, np.float32).tobytes() + png
+    assert np.array_equal(decode_compressed_depth("16UC1; compressedDepth png", data), depth)
+
+    with pytest.raises(ValueError):
+        decode_compressed_depth("16UC1; compressedDepth rvl", data)

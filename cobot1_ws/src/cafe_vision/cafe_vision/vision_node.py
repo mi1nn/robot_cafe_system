@@ -1,7 +1,8 @@
 """/vision/detect_cup 서비스: 손목 카메라로 컵을 찾아 로봇 base 기준 집는 점을 돌려준다.
 
 - mock 모드 (mock_file 지정): 카메라, 모델, TF 없이 yaml 값을 그대로 돌려준다 (시뮬레이션).
-- 실제 모드: YOLO 추론 → 신뢰도 최고 후보 → 깊이로 3D → TF(base→link_6) · X(link_6→카메라).
+- 실제 모드: 카메라는 압축 토픽(color: compressed, depth: compressedDepth)으로 받는다.
+  YOLO 추론 → 신뢰도 최고 후보 → 깊이로 3D → TF(base→link_6) · X(link_6→카메라).
 """
 
 import os
@@ -15,7 +16,7 @@ from rclpy.time import Time
 
 from cafe_interfaces.srv import DetectCup
 
-from .detection import build_response, load_mock, not_found
+from .detection import build_response, decode_compressed_depth, load_mock, not_found
 from .geometry import choose_best, tf_to_matrix
 
 FRAME_TIMEOUT = 1.0
@@ -32,8 +33,8 @@ class VisionNode(Node):
             "model_path": "",
             "extrinsics_file": "",
             "confidence_threshold": 0.5,
-            "color_topic": "/camera/color/image_raw",
-            "depth_topic": "/camera/aligned_depth_to_color/image_raw",
+            "color_topic": "/camera/color/image_raw/compressed",
+            "depth_topic": "/camera/aligned_depth_to_color/image_raw/compressedDepth",
             "info_topic": "/camera/color/camera_info",
             "base_frame": "base_link",
             "flange_frame": "link_6",
@@ -56,7 +57,7 @@ class VisionNode(Node):
     def _setup_camera(self, group):
 
         from cv_bridge import CvBridge
-        from sensor_msgs.msg import CameraInfo, Image
+        from sensor_msgs.msg import CameraInfo, CompressedImage
         from tf2_ros import Buffer, TransformListener
 
         from .detector import YoloCupDetector
@@ -78,18 +79,18 @@ class VisionNode(Node):
         self.color = self.depth = self.K = None
         self.color_time = 0.0
 
-        self.create_subscription(Image, self.p["color_topic"], self.cb_color, 10, callback_group=group)
-        self.create_subscription(Image, self.p["depth_topic"], self.cb_depth, 10, callback_group=group)
+        self.create_subscription(CompressedImage, self.p["color_topic"], self.cb_color, 10, callback_group=group)
+        self.create_subscription(CompressedImage, self.p["depth_topic"], self.cb_depth, 10, callback_group=group)
         self.create_subscription(CameraInfo, self.p["info_topic"], self.cb_info, 10, callback_group=group)
 
         self.get_logger().info(f"실제 모드: model={self.p['model_path']}")
 
     def cb_color(self, msg):
-        self.color = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        self.color = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
         self.color_time = time.monotonic()
 
     def cb_depth(self, msg):
-        self.depth = self.bridge.imgmsg_to_cv2(msg, "passthrough")
+        self.depth = decode_compressed_depth(msg.format, msg.data)
 
     def cb_info(self, msg):
         self.K = (msg.k[0], msg.k[4], msg.k[2], msg.k[5])
