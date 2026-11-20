@@ -47,3 +47,12 @@ def test_mock_files_are_inside_virtual_workspace():
         assert mock["found"] is True and mock["state"] == name
         p = mock["position"]
         assert all(lo <= v <= hi for v, (lo, hi) in zip(p, (ws["x"], ws["y"], ws["z"])))
+
+
+def test_build_response_lying_without_keypoint_is_not_found():
+    d = np.zeros((480, 640), np.uint16)
+    d[200:280, 260:380] = 400
+    c = {"state": "lying", "conf": 0.8, "box": (260, 200, 380, 280), "rim_px": (0.0, 0.0), "bottom_px": (270, 240)}
+    r = build_response(c, d, K, np.eye(4))
+    assert r["found"] is False
+    assert "키포인트" in r["message"]

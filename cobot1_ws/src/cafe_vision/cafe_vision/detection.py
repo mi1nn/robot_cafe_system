@@ -29,6 +29,9 @@ def build_response(candidate, depth_mm, K, T_base_cam):
     if candidate is None:
         return not_found("컵을 찾지 못했습니다")
 
+    if candidate["state"] == "lying" and (0.0, 0.0) in (tuple(candidate["rim_px"]), tuple(candidate["bottom_px"])):
+        return not_found("누운 컵의 키포인트를 확신할 수 없습니다")
+
     z = top_depth(depth_mm, candidate["box"])
     if z is None:
         return not_found("컵 깊이를 읽지 못했습니다")
