@@ -16,6 +16,7 @@ setup(
     entry_points={
         "console_scripts": [
             "vision_node = cafe_vision.vision_node:main",
+            "calibrate_node = cafe_vision.calibrate_node:main",
         ],
     },
 )
