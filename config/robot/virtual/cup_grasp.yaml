@@ -7,11 +7,11 @@ velocity: 30.0
 acceleration: 30.0
 
 states:
-  upright:                       # 바로 선 컵: 위에서 수직으로 집고 그대로 운반
-    grasp_offset: [0.0, 0.0, -30.0]
+  upright:
+    grasp_offset: [0.0, 0.0, -20.0]
     place_offset: [0.0, 0.0, 0.0]     # 세운 뒤 TCP~컵 바닥 거리 차이 보정 (station 에 더함)
-    approach_orientation: [0.0, 180.0, 0.0]
-    carry_orientation: [0.0, 180.0, 0.0]
+    approach_orientation: [0.0, 90.0, 0.0]
+    carry_orientation: [0.0, 90.0, 0.0]
   inverted:                      # 뒤집힌 컵: 툴을 수평으로 집고 J6를 180도 돌려 세움
     grasp_offset: [0.0, 0.0, -20.0]
     place_offset: [0.0, 0.0, 0.0]     # 세운 뒤 TCP~컵 바닥 거리 차이 보정 (station 에 더함)

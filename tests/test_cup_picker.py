@@ -11,7 +11,7 @@ CFG = {
     "velocity": 30.0,
     "acceleration": 30.0,
     "states": {
-        "upright": {"grasp_offset": [0, 0, -30], "approach_orientation": [0, 180, 0], "carry_orientation": [0, 180, 0]},
+        "upright": {"grasp_offset": [0, 0, -30], "approach_orientation": [0, 90, 0], "carry_orientation": [0, 90, 0]},
         "inverted": {"grasp_offset": [0, 0, -20], "place_offset": [0, 0, 40], "approach_orientation": [0, 90, 0], "carry_orientation": [0, 90, 180]},
         "lying": {
             "grasp_offset": [0, 0, -10],
@@ -74,8 +74,9 @@ def test_plan_pick_upright_sequence():
     assert plan[0] == ("gripper", "open")
     assert plan[3] == ("gripper", "close")
     assert plan[8] == ("gripper", "open")
-    assert plan[2] == ("move", [400, 0, 70, 0, 180, 0])
-    assert plan[1] == ("move", [400, 0, 170, 0, 180, 0])
+    assert plan[2] == ("move", [400, 0, 70, 0, 90, 0])
+    assert plan[1] == ("move", [400, 0, 170, 0, 90, 0])
+    assert all(step[1][3:] == [0, 90, 0] for step in plan if step[0] == "move")
 
 
 def heading(posx):

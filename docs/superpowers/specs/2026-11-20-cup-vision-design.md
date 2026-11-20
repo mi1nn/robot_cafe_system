@@ -106,7 +106,7 @@ coffee_process ──vision_pick──▶ CupPicker
   | 상태 | 집는 점 |
   |---|---|
   | inverted | 윗면(컵 바닥) 중심. z는 윗면 깊이 |
-  | upright | 입구 중심 |
+  | upright | 윗면(입구) 중심. z는 윗면 깊이, 옆면 높이는 grasp_offset 으로 |
   | lying | 두 키포인트의 중점. yaw는 두 점을 이은 방향, rim_direction은 바닥→입구 방향 |
 - **파라미터:** `model_path`, `confidence_threshold`, `camera_extrinsics_file`(§5.6에서 만든 파일), `mock_file`
 - **mock 모드:** `mock_file`(yaml)을 주면 카메라와 모델 없이 그 값을 돌려준다. 시뮬레이션과 테스트용이다.
@@ -137,7 +137,7 @@ coffee_process ──vision_pick──▶ CupPicker
 
      | 상태 | 접근 자세 | 바로 세우기 |
      |---|---|---|
-     | upright | 툴 수직 | 없음 |
+     | upright | 툴 수평, 옆에서 접근 (inverted와 같음) | 없음 (180° 회전 안 함) |
      | inverted | 툴 수평, 옆에서 접근 | J6 180° 회전 |
      | lying | 툴 수직, yaw를 컵 축에 맞춤 | rim_direction에 따라 손목 ±90° |
   4. `cup_station` 위로 이동 → 하강 → 그리퍼 열기 → 상승.
