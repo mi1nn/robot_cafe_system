@@ -1,0 +1,7 @@
+found: true
+state: lying
+position: [450.0, 0.0, 60.0]
+yaw: 30.0
+rim_direction: 30.0
+confidence: 0.99
+message: mock lying

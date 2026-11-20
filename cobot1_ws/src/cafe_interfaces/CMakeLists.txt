@@ -24,6 +24,7 @@ set(srv_files
   "srv/SetDigitalOutput.srv"
   "srv/GetDigitalInput.srv"
   "srv/MoveCartesian.srv"
+  "srv/DetectCup.srv"
 )
 
 set(action_files

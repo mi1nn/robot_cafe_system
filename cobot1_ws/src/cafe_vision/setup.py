@@ -14,6 +14,8 @@ setup(
     install_requires=["setuptools", "PyYAML"],
     zip_safe=True,
     entry_points={
-        "console_scripts": [],
+        "console_scripts": [
+            "vision_node = cafe_vision.vision_node:main",
+        ],
     },
 )
