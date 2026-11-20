@@ -35,6 +35,10 @@ class FakeRobot:
     def move_to_pose(self, name, velocity, acceleration):
         self.calls.append(("pose", name))
 
+    def check_cartesian(self, pose):
+        if pose[2] < 50:
+            raise RuntimeError("Target outside workspace: z")
+
     def move_cartesian(self, pose, velocity, acceleration):
         if self.cartesian_error:
             raise self.cartesian_error
@@ -143,3 +147,12 @@ def test_picker_calls_checkpoint_before_each_motion():
 def test_plan_pick_place_offset_defaults_to_zero():
     plan = plan_pick({"state": "upright", "position": [400, 0, 100], "yaw": 0, "rim_direction": 0}, CFG)
     assert plan[7][1][:3] == CFG["station_position"]
+
+
+def test_picker_validates_all_targets_before_moving():
+    robot, io = FakeRobot(), FakeIO()
+    low_cup = {**FOUND_INVERTED, "state": "upright", "position": [400, 0, 60]}  # 집는 점 z=30 < 50
+    with pytest.raises(RuntimeError, match="outside workspace"):
+        CupPicker(robot, io, FakeVision([low_cup]), CFG).run(lambda: None, print)
+    assert not [c for c in robot.calls if c[0] == "cartesian"]
+    assert io.calls == []

@@ -1,6 +1,7 @@
 float64[6] pose
 float64 velocity
 float64 acceleration
+bool check_only        # true 면 작업 영역 검사만 하고 움직이지 않는다
 ---
 bool success
 string message

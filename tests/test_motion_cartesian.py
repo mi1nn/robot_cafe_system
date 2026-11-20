@@ -32,3 +32,12 @@ def test_move_cartesian_without_workspace_is_refused():
     with pytest.raises(ValueError, match="workspace"):
         MotionManager(driver, {}).move_cartesian([400, 0, 200, 0, 180, 0])
     assert driver.calls == []
+
+
+def test_move_cartesian_check_only_does_not_move():
+    driver = FakeDriver()
+    m = MotionManager(driver, {}, WORKSPACE)
+    m.move_cartesian([400, 0, 200, 0, 180, 0], check_only=True)
+    with pytest.raises(ValueError, match="outside workspace"):
+        m.move_cartesian([400, 0, 10, 0, 180, 0], check_only=True)
+    assert driver.calls == []

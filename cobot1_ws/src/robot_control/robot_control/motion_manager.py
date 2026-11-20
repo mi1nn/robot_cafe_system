@@ -16,6 +16,7 @@ class MotionManager:
         pose,
         velocity=30.0,
         acceleration=30.0,
+        check_only=False,
     ):
 
         # 비전 등 외부에서 온 좌표는 작업 영역 안에서만 움직인다.
@@ -28,6 +29,9 @@ class MotionManager:
                 raise ValueError(
                     f"Target outside workspace: {axis}={value} not in [{low}, {high}]"
                 )
+
+        if check_only:
+            return None
 
         return self.robot.move_line(
             list(pose),

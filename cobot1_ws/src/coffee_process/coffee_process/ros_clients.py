@@ -53,6 +53,11 @@ class RobotClient:
         if not result.success:
             raise RuntimeError(result.message)
 
+    def check_cartesian(self, pose):
+
+        request = MoveCartesian.Request(pose=[float(v) for v in pose], check_only=True)
+        self._check(call_service(self._move_cartesian, request, 5.0))
+
     def move_cartesian(self, pose, velocity, acceleration):
 
         request = MoveCartesian.Request(

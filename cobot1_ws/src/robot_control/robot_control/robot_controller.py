@@ -24,8 +24,8 @@ class RobotController:
             motion_type,
         )
 
-    def move_cartesian(self, pose, velocity=30.0, acceleration=30.0):
-        return self.motion.move_cartesian(pose, velocity, acceleration)
+    def move_cartesian(self, pose, velocity=30.0, acceleration=30.0, check_only=False):
+        return self.motion.move_cartesian(pose, velocity, acceleration, check_only)
 
     def move_home(self):
         return self.motion.move_home()

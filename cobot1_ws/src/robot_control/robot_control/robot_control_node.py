@@ -116,10 +116,11 @@ class RobotControlNode(Node):
                 list(request.pose),
                 request.velocity,
                 request.acceleration,
+                request.check_only,
             )
 
             response.success = True
-            response.message = "Moved to cartesian target"
+            response.message = "Target inside workspace" if request.check_only else "Moved to cartesian target"
 
         except Exception as exc:
             response.success = False

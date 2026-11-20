@@ -65,7 +65,13 @@ class CupPicker:
         detection = self._detect(checkpoint)
         report(f"컵 탐지: {detection['state']}")
 
-        for kind, value in plan_pick(detection, self.cfg):
+        plan = plan_pick(detection, self.cfg)
+
+        for kind, value in plan:
+            if kind == "move":
+                self.robot.check_cartesian(value)
+
+        for kind, value in plan:
             checkpoint()
             if kind == "gripper":
                 self.io.set_gripper(value)
