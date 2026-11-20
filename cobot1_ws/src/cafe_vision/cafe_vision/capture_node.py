@@ -19,7 +19,7 @@ class CaptureNode(Node):
 
         super().__init__("cafe_vision_capture")
 
-        self.declare_parameter("color_topic", "/camera/camera/color/image_raw")
+        self.declare_parameter("color_topic", "/camera/color/image_raw")
         self.declare_parameter("out_dir", os.path.expanduser("~/cafe_vision_dataset/raw"))
 
         self.out_dir = os.path.expanduser(self.get_parameter("out_dir").value)

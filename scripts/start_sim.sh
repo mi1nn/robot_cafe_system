@@ -10,7 +10,7 @@ LOG="$ROOT/log/sim"
 [ "$MODE" = real ] && LOG="$ROOT/log/real"
 mkdir -p "$LOG"
 
-if pgrep -f "ros2_control_node|run_emulator|driver_node|robot_control_node|coffee_process_node|rosbridge_websocket|backend.app" > /dev/null; then
+if pgrep -f "ros2_control_node|run_emulator|driver_node|robot_control_node|coffee_process_node|vision_node|rosbridge_websocket|backend.app" > /dev/null; then
     echo "이미 실행 중인 로봇/노드가 있습니다. 먼저 종료하세요."
     exit 1
 fi
@@ -23,23 +23,38 @@ wait_log() {
     echo "시간 초과: $1 에서 '$2' 를 못 찾았습니다."; exit 1
 }
 
-echo "[1/6] 로봇 bringup ($MODE ${ROBOT_HOST:-127.0.0.1})"
-ros2 launch m0609_rg2_bringup bringup.launch.py mode:="$MODE" host:="${ROBOT_HOST:-127.0.0.1}" > "$LOG/bringup.log" 2>&1 &
+# 실제 모드는 손목 RealSense 까지 띄우는 bringup_camera 사용. 가상 모드는 mock 비전이라 카메라 불필요.
+BRINGUP=bringup.launch.py
+[ "$MODE" = real ] && BRINGUP=bringup_camera.launch.py
+
+echo "[1/7] 로봇 bringup ($MODE ${ROBOT_HOST:-127.0.0.1})"
+ros2 launch m0609_rg2_bringup "$BRINGUP" mode:="$MODE" host:="${ROBOT_HOST:-127.0.0.1}" > "$LOG/bringup.log" 2>&1 &
 wait_log "$LOG/bringup.log" "Configured and activated dsr_controller2" 90
 
-echo "[2/6] robot_driver"
+echo "[2/7] robot_driver"
 ros2 run robot_driver driver_node > "$LOG/driver.log" 2>&1 &
-echo "[3/6] robot_control"
+echo "[3/7] robot_control"
 ros2 run robot_control robot_control_node --ros-args \
     -p poses_file:="$ROOT/config/robot/$MODE/poses.yaml" > "$LOG/control.log" 2>&1 &
-echo "[4/6] coffee_process"
+echo "[4/7] coffee_process"
 ros2 run coffee_process coffee_process_node --ros-args \
     -p recipe_dir:="$ROOT/cobot1_ws/src/coffee_process/config/recipes" \
-    -p io_file:="$ROOT/config/robot/$MODE/io.yaml" > "$LOG/coffee.log" 2>&1 &
-echo "[5/6] rosbridge"
+    -p io_file:="$ROOT/config/robot/$MODE/io.yaml" \
+    -p grasp_file:="$ROOT/config/robot/$MODE/cup_grasp.yaml" > "$LOG/coffee.log" 2>&1 &
+if [ "$MODE" = real ]; then
+    echo "[5/7] cafe_vision (YOLO + RealSense)"
+    ros2 run cafe_vision vision_node --ros-args \
+        -p model_path:="$ROOT/cobot1_ws/src/cafe_vision/models/cup_pose.pt" \
+        -p extrinsics_file:="$ROOT/config/robot/real/camera_extrinsics.yaml" > "$LOG/vision.log" 2>&1 &
+else
+    MOCK="${MOCK_DETECTION:-$ROOT/config/robot/virtual/mock/inverted.yaml}"
+    echo "[5/7] cafe_vision (mock: $(basename "$MOCK"))"
+    ros2 run cafe_vision vision_node --ros-args -p mock_file:="$(realpath "$MOCK")" > "$LOG/vision.log" 2>&1 &
+fi
+echo "[6/7] rosbridge"
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml > "$LOG/rosbridge.log" 2>&1 &
 wait_log "$LOG/rosbridge.log" "Rosbridge WebSocket server started" 30
 
-echo "[6/6] 백엔드 → http://localhost:${FLASK_PORT:-5000}"
+echo "[7/7] 백엔드 → http://localhost:${FLASK_PORT:-5000}"
 echo "로그: $LOG   (종료: Ctrl+C)"
 "$ROOT/scripts/start_backend.sh" 2>&1 | tee "$LOG/backend.log"

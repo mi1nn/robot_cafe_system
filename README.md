@@ -112,7 +112,7 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 ```bash
 cd <저장소 경로>
 ./scripts/build.sh          # 처음 한 번
-./scripts/start_sim.sh      # 가상 로봇 + ROS 노드 + rosbridge + 백엔드 (로그: log/sim/)
+./scripts/start_sim.sh      # 가상 로봇 + ROS 노드 + 비전(mock) + rosbridge + 백엔드 (로그: log/sim/)
 ```
 
 로봇은 STOPPED 상태로 시작하므로 첫 주문 전에 초기화합니다.
@@ -124,10 +124,21 @@ curl -X POST localhost:5000/api/control/start    # IDLE (주문 대기)
 
 브라우저에서 `http://localhost:5000` 접속 후 주문합니다.
 
+시뮬레이션에서는 카메라 대신 가짜 탐지 결과를 씁니다 (기본: 뒤집힌 컵). 다른 컵 상태로 해 보려면:
+
+```bash
+MOCK_DETECTION=config/robot/virtual/mock/lying.yaml ./scripts/start_sim.sh   # upright / inverted / lying
+```
+
 ### Real
 
-`config/robot/real/` 의 포즈(`poses.yaml`)와 I/O(`io.yaml`)를 티칭·배선 확인 후 채워야 합니다.
-값이 0 이거나 `TODO` 로 남아 있으면 스크립트가 실행을 거부합니다.
+실행 전에 아래 순서로 준비합니다. 자세한 절차는 `cobot1_ws/src/cafe_vision/README.md` 에 있습니다.
+
+1. **핸드-아이 캘리브레이션** → `config/robot/real/camera_extrinsics.yaml`
+2. **컵 모델 학습** → `cobot1_ws/src/cafe_vision/models/cup_pose.pt`
+3. **티칭·배선**: `config/robot/real/` 의 포즈(`poses.yaml`: `cup_look` 포함, `workspace` 범위), I/O(`io.yaml`), 컵 집기 설정(`cup_grasp.yaml`: `station_position` 은 `cup_pick` 과 같은 자리)
+
+값이 0 이거나 `TODO` 로 남아 있거나, 캘리브레이션 결과·모델 파일이 없으면 스크립트가 실행을 거부합니다.
 
 ```bash
 ROBOT_HOST=<로봇 IP> ./scripts/start_real.sh   # 설정 검사 → yes 입력 → 실행 (로그: log/real/)

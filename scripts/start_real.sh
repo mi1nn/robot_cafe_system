@@ -1,5 +1,5 @@
 #!/bin/bash
-# 실제 M0609 + ROS 노드 + rosbridge + 백엔드를 한 번에 실행. Ctrl+C 한 번으로 전부 종료.
+# 실제 M0609(+ 손목 RealSense) + ROS 노드 + 비전 + rosbridge + 백엔드를 한 번에 실행. Ctrl+C 한 번으로 전부 종료.
 # 사용: ROBOT_HOST=192.168.1.100 ./scripts/start_real.sh   (설정: config/robot/real/)
 # 로그: log/real/<이름>.log
 
@@ -13,6 +13,12 @@ fi
 echo "실제 로봇 설정 검사: config/robot/real/"
 if ! python3 "$ROOT/scripts/check_robot_config.py" "$ROOT/config/robot/real"; then
     echo "티칭/배선 확인 후 위 값을 채우세요. 실행을 중단합니다."
+    exit 1
+fi
+
+MODEL="$ROOT/cobot1_ws/src/cafe_vision/models/cup_pose.pt"
+if [ ! -f "$MODEL" ]; then
+    echo "모델 없음: $MODEL (cobot1_ws/src/cafe_vision/README.md 학습 절 참고). 실행을 중단합니다."
     exit 1
 fi
 
