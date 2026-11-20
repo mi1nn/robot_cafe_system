@@ -4,10 +4,36 @@ class MotionManager:
         self,
         robot_driver,
         poses,
+        workspace=None,
     ):
 
         self.robot = robot_driver
         self.poses = poses
+        self.workspace = workspace
+
+    def move_cartesian(
+        self,
+        pose,
+        velocity=30.0,
+        acceleration=30.0,
+    ):
+
+        # 비전 등 외부에서 온 좌표는 작업 영역 안에서만 움직인다.
+        if not self.workspace:
+            raise ValueError("No workspace defined; refusing cartesian move")
+
+        for axis, value in zip(("x", "y", "z"), pose[:3]):
+            low, high = self.workspace[axis]
+            if not low <= value <= high:
+                raise ValueError(
+                    f"Target outside workspace: {axis}={value} not in [{low}, {high}]"
+                )
+
+        return self.robot.move_line(
+            list(pose),
+            velocity,
+            acceleration,
+        )
 
     def move_to_pose(
         self,

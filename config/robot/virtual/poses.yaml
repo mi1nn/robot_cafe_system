@@ -1,6 +1,12 @@
 # Virtual M0609 sample poses.
 # These are NOT real robot teaching values.
 
+# 좌표 이동(move_cartesian) 허용 범위, base 기준 mm.
+workspace:
+  x: [200, 700]
+  y: [-400, 400]
+  z: [50, 600]
+
 poses:
 
   home:
@@ -20,3 +26,7 @@ poses:
 
   trash:
     joint: [90.0, 20.0, 70.0, 0.0, 90.0, 0.0]
+
+  # 컵 탐지용 관찰 자세 (손목 카메라가 컵 놓는 영역을 내려다봄)
+  cup_look:
+    joint: [0.0, 0.0, 90.0, 0.0, 90.0, 0.0]

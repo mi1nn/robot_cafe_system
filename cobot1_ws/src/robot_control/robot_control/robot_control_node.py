@@ -7,7 +7,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from std_srvs.srv import Trigger
 
-from cafe_interfaces.srv import MoveNamedPose, StopProcess
+from cafe_interfaces.srv import MoveCartesian, MoveNamedPose, StopProcess
 
 from .driver_client import DriverActionClient
 from .robot_controller import RobotController
@@ -33,12 +33,15 @@ class RobotControlNode(Node):
             )
 
         with open(poses_file, "r", encoding="utf-8") as file:
-            poses = yaml.safe_load(file)["poses"]
+            config = yaml.safe_load(file)
+
+        poses = config["poses"]
+        workspace = config.get("workspace")
 
         self.get_logger().info(f"Loaded poses: {poses_file}")
 
         self.driver = DriverActionClient(self)
-        self.motion = MotionManager(self.driver, poses)
+        self.motion = MotionManager(self.driver, poses, workspace)
         self.safety = SafetyManager()
 
         self.controller = RobotController(
@@ -53,6 +56,13 @@ class RobotControlNode(Node):
             MoveNamedPose,
             "/robot_control/move_named_pose",
             self.cb_move_named_pose,
+            callback_group=self.service_group,
+        )
+
+        self.move_cartesian_srv = self.create_service(
+            MoveCartesian,
+            "/robot_control/move_cartesian",
+            self.cb_move_cartesian,
             callback_group=self.service_group,
         )
 
@@ -76,7 +86,7 @@ class RobotControlNode(Node):
         )
 
         self.get_logger().info("Robot control services ready")
-        self.get_logger().info("  /robot_control/move_named_pose")
+        self.get_logger().info("  /robot_control/move_named_pose, /robot_control/move_cartesian")
         self.get_logger().info("  /robot_control/stop_process")
         self.get_logger().info("  /robot_control/pause, /robot_control/resume")
 
@@ -92,6 +102,24 @@ class RobotControlNode(Node):
 
             response.success = True
             response.message = f"Moved to {request.pose_name}"
+
+        except Exception as exc:
+            response.success = False
+            response.message = str(exc)
+
+        return response
+
+    def cb_move_cartesian(self, request, response):
+
+        try:
+            self.controller.move_cartesian(
+                list(request.pose),
+                request.velocity,
+                request.acceleration,
+            )
+
+            response.success = True
+            response.message = "Moved to cartesian target"
 
         except Exception as exc:
             response.success = False

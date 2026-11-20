@@ -23,6 +23,7 @@ set(srv_files
   "srv/StopProcess.srv"
   "srv/SetDigitalOutput.srv"
   "srv/GetDigitalInput.srv"
+  "srv/MoveCartesian.srv"
 )
 
 set(action_files
