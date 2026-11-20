@@ -38,9 +38,16 @@ def check(config_dir):
         errors.append("camera_extrinsics.yaml 없음 (핸드-아이 캘리브레이션 필요)")
 
     grasp_file = config_dir / "cup_grasp.yaml"
-    station = (yaml.safe_load(grasp_file.read_text()) or {}).get("station_position") if grasp_file.exists() else None
+    grasp = (yaml.safe_load(grasp_file.read_text()) or {}) if grasp_file.exists() else {}
+    station = grasp.get("station_position")
     if not station or all(float(v) == 0.0 for v in station):
         errors.append("cup_grasp.yaml: station_position 가 전부 0 (티칭 필요)")
+
+    for state, values in (grasp.get("states") or {}).items():
+        for key, orientation in (values or {}).items():
+            if "orientation" in key:
+                if all(float(v) == 0.0 for v in orientation):
+                    errors.append(f"cup_grasp.yaml: {state}.{key} 가 전부 0 (툴이 위를 향함, 티칭 필요)")
 
     return errors
 

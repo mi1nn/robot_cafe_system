@@ -55,3 +55,15 @@ def test_untaught_vision_values_in_real_config_are_rejected():
     assert any("station_position" in e for e in errors)
     assert any("cup_look" in e for e in errors)
     assert any("camera_extrinsics" in e for e in errors)
+
+
+def test_untaught_grasp_orientation_is_rejected(tmp_path):
+    write_taught(tmp_path)
+    (tmp_path / "cup_grasp.yaml").write_text(
+        "station_position: [450, 200, 100]\n"
+        "states:\n  upright:\n    grasp_offset: [0, 0, 0]\n"
+        "    approach_orientation: [0, 0, 0]\n    carry_orientation: [0, 180, 0]\n"
+    )
+    errors = check(tmp_path)
+    assert any("upright.approach_orientation" in e for e in errors)
+    assert not any("grasp_offset" in e or "carry_orientation" in e for e in errors)
