@@ -130,6 +130,14 @@ curl -X POST localhost:5000/api/control/start    # IDLE (주문 대기)
 MOCK_DETECTION=config/robot/virtual/mock/lying.yaml ./scripts/start_sim.sh   # upright / inverted / lying
 ```
 
+가상 로봇에 실제 RealSense 와 YOLO 모델을 붙여 탐지만 확인하려면 (`models/cup_pose.pt` 필요):
+
+```bash
+REAL_CAMERA=1 ./scripts/start_sim.sh
+```
+
+로봇이 가상이라 TF 가 실제 손목 위치와 다르므로, 나온 좌표는 의미가 없습니다. 탐지 상태(`log/sim/vision.log`)만 보세요.
+
 ### Real
 
 실행 전에 아래 순서로 준비합니다. 자세한 절차는 `cobot1_ws/src/cafe_vision/README.md` 에 있습니다.

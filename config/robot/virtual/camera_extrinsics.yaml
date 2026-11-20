@@ -1,4 +1,4 @@
-# 가상 모드 예시 값 (mock 비전이라 실제로 쓰이지 않음). 실제 값은 calibrate_node가 real/ 에 저장.
+# 가상 모드 예시 값 (mock 비전에선 안 쓰이고, REAL_CAMERA=1 일 때만 쓰임). 실제 값은 calibrate_node가 real/ 에 저장.
 parent: link_6
 child: camera_color_optical_frame
 translation_mm:
